@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Proyek</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Mobile first styles */
+        @media (max-width: 640px) {
+            #sidebar {
+                position: fixed;
+                height: 100vh;
+                z-index: 40;
+                transform: translateX(-100%);
+            }
+            #sidebar.active {
+                transform: translateX(0);
+            }
+        }
+
+        .progress-bar {
+            @apply w-full bg-gray-200 rounded-full h-2.5;
+        }
+        .progress-fill {
+            @apply bg-blue-600 h-2.5 rounded-full;
+        }
+        .slide-fade-enter-active, .slide-fade-leave-active {
+            transition: all 0.3s ease;
+        }
+        .slide-fade-enter-from, .slide-fade-leave-to {
+            transform: translateX(20px);
+            opacity: 0;
+        }
+        /* Styles for dynamic content visibility */
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div id="sidebar" class="w-64 bg-blue-800 text-white transition-all duration-300 ease-in-out">
+            <div class="p-4 border-b border-blue-700">
+                <h1 class="text-xl font-bold">ProjectFlow</h1>
+            </div>
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 bg-blue-700 rounded-lg" data-page="dashboard-view">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="proyek-view">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>Proyek</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="tugas-view">
+                            <i class="fas fa-tasks"></i>
+                            <span>Tugas</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="berita-acara-view">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Berita Acara</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="dokumen-view">
+                            <i class="fas fa-file-contract"></i>
+                            <span>Dokumen</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="keuangan-view">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Keuangan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="tim-view">
+                            <i class="fas fa-users"></i>
+                            <span>Tim</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm">
+                <div class="flex justify-between items-center p-4">
+                    <div class="flex items-center space-x-4">
+                        <button id="menu-toggle" class="p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2 id="main-content-title" class="text-xl font-semibold">Dashboard</h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button class="p-2 rounded-lg hover:bg-gray-100 relative">
+                            <i class="fas fa-bell"></i>
+                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        <div class="flex items-center space-x-2">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/e80ce967-c976-426e-8858-2747c6b4187b.png" alt="Foto profil pengguna" class="rounded-full w-8 h-8">
+                            <span class="font-medium">Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <!-- Dashboard View -->
+                <div id="dashboard-view" class="page-content active mb-8">
+                    <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold mb-2">Proyek Aktif</h3>
+                            <div id="active-projects-list"></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold mb-2">Tugas Mendatang</h3>
+                            <div id="upcoming-tasks-list"></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold mb-2">Tim</h3>
+                            <div id="team-members-list"></div>
+                        </div>
+                    </div>
+                    <div class="mt-6 bg-white p-4 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-2">Progress Proyek</h3>
+                        <div id="project-progress-chart"></div>
+                    </div>
+                </div>
+
+                <!-- Proyek View (Existing content for projects) -->
+                <div id="proyek-view" class="page-content">
+                    <!-- Header dan Kontrol Proyek -->
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Daftar Proyek</h1>
+                            <p class="text-gray-600">Kelola semua proyek Anda di satu tempat</p>
+                        </div>
+                        <button id="add-project-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Tambah Proyek</span>
+                        </button>
+                    </div>
+
+                    <!-- Filter dan Pencarian -->
+                    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Cari Proyek</label>
+                                <input type="text" id="search" placeholder="Nama proyek, kode, klien..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select id="status-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Status</option>
+                                    <option>Aktif</option>
+                                    <option>Review</option>
+                                    <option>Ditunda</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="category-filter" class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                                <select id="category-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Kategori</option>
+                                    <option>Infrastruktur</option>
+                                    <option>IT</option>
+                                    <option>Konstruksi</option>
+                                    <option>Telekomunikasi</option>
+                                    <option>Manufaktur</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs Navigasi -->
+                    <div class="flex border-b mb-6">
+                        <button class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600">Semua Proyek</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Tugas</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Berita Acara</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Dokumen</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Keuangan</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Tim</button>
+                    </div>
+
+                    <!-- Tabel Proyek -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Proyek</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klien</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="project-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data proyek akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Sebelumnya</a>
+                                <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Berikutnya</a>
+                            </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Menampilkan <span class="font-medium">1</span> sampai <span class="font-medium">10</span> dari <span class="font-medium">20</span> hasil
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Sebelumnya</span>
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                        <a href="#" aria-current="page" class="z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">1</a>
+                                        <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">2</a>
+                                        <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">3</a>
+                                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Berikutnya</span>
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tugas View (New content for Tasks) -->
+                <div id="tugas-view" class="page-content">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4">Daftar Tugas</h1>
+                    <p class="text-gray-600 mb-6">Kelola semua tugas proyek Anda di sini.</p>
+                    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="task-search" class="block text-sm font-medium text-gray-700 mb-1">Cari Tugas</label>
+                                <input type="text" id="task-search" placeholder="Nama tugas, proyek, penanggung jawab..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="task-status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status Tugas</label>
+                                <select id="task-status-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Status</option>
+                                    <option>Belum Dimulai</option>
+                                    <option>Dalam Pengerjaan</option>
+                                    <option>Review</option>
+                                    <option>Tertunda</option>
+                                    <option>Selesai</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="task-priority-filter" class="block text-sm font-medium text-gray-700 mb-1">Prioritas</label>
+                                <select id="task-priority-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Prioritas</option>
+                                    <option>Tinggi</option>
+                                    <option>Sedang</option>
+                                    <option>Rendah</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Tugas</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penanggung Jawab</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioritas</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batas Waktu</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="task-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data tugas akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Pagination for tasks can be added here -->
+                    </div>
+                </div>
+
+                <!-- Berita Acara View (New content for Minutes) -->
+                <div id="berita-acara-view" class="page-content">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4">Daftar Berita Acara</h1>
+                    <p class="text-gray-600 mb-6">Kelola semua berita acara rapat dan kejadian penting.</p>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek Terkait</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="minute-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data berita acara akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dokumen View (New content for Documents) -->
+                <div id="dokumen-view" class="page-content">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4">Daftar Dokumen</h1>
+                    <p class="text-gray-600 mb-6">Kelola semua dokumen proyek Anda.</p>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Dokumen</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek Terkait</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Unggah</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="document-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data dokumen akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keuangan View (New content for Finance) -->
+                <div id="keuangan-view" class="page-content">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4">Manajemen Keuangan</h1>
+                    <p class="text-gray-600 mb-6">Pantau pemasukan dan pengeluaran proyek.</p>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek Terkait</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Transaksi</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="finance-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data keuangan akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tim View (New content for Team) -->
+                <div id="tim-view" class="page-content">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4">Anggota Tim</h1>
+                    <p class="text-gray-600 mb-6">Kelola anggota tim dan peran mereka.</p>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peran</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="team-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data tim akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Proyek -->
+    <div id="add-project-modal" class="fixed inset-0 overflow-y-auto hidden z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Tambah Proyek Baru</h3>
+                        <button id="close-project-modal" class="text-gray-400 hover:text-gray-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="project-form">
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label for="project-name" class="block text-sm font-medium text-gray-700">Nama Proyek *</label>
+                                    <input type="text" id="project-name" name="project-name" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="project-code" class="block text-sm font-medium text-gray-700">Kode Proyek *</label>
+                                    <input type="text" id="project-code" name="project-code" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="client" class="block text-sm font-medium text-gray-700">Klien *</label>
+                                <select id="client" name="client" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">Pilih Klien</option>
+                                </select>
+                                <button type="button" onclick="openClientModal()" class="text-blue-600 text-sm underline hover:text-blue-800">+ Tambah Klien</button>
+                            </div>
+                            <div id="client-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                                <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                                    <h2 class="text-lg font-semibold mb-4">Tambah Klien Baru</h2>
+                                    <input type="text" id="new-client-name" placeholder="Nama Klien" class="w-full px-3 py-2 border rounded mb-4" />
+                                    <div class="flex justify-end space-x-2">
+                                        <button onclick="closeClientModal()" class="px-4 py-2 rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Batal</button>
+                                        <button onclick="simpanClientBaru()" class="px-4 py-2 rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Simpan</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label for="category" class="block text-sm font-medium text-gray-700">Kategori *</label>
+                                <select id="category" name="category" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">Pilih Kategori</option>
+                                    <option>Infrastruktur</option>
+                                    <option>IT</option>
+                                    <option>Konstruksi</option>
+                                    <option>Telekomunikasi</option>
+                                    <option>Manufaktur</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label for="start-date" class="block text-sm font-medium text-gray-700">Tanggal Mulai *</label>
+                                    <input type="date" id="start-date" name="start-date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="end-date" class="block text-sm font-medium text-gray-700">Tanggal Selesai *</label>
+                                    <input type="date" id="end-date" name="end-date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="description" class="block text-sm font-medium text-gray-700">Deskripsi</label>
+                                <textarea id="description" name="description" rows="3" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            <input type="hidden" id="project-id-hidden" name="project-id">
+                        </div>
+                        <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm">
+                                <span id="status-message">Simpan</span>
+                                <span id="loading-spinner" class="hidden ml-2">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </button>
+                            <button type="button" id="cancel-project-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail Proyek -->
+    <div id="project-detail-modal" class="fixed inset-0 overflow-y-auto hidden z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800"></h2>
+                        <button onclick="document.getElementById('project-detail-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex gap-2 flex-wrap" id="project-tags">
+                            <!-- Tags will be filled dynamically -->
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800" id="detail-project-status"></span>
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800" id="detail-project-category"></span>
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800" id="detail-project-code"></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 mb-6" id="project-basic-info">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Klien</p>
+                            <p class="text-gray-800 font-semibold" id="detail-project-client"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Tanggal Mulai</p>
+                            <p class="text-gray-800 font-semibold" id="detail-project-start-date"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Tanggal Selesai</p>
+                            <p class="text-gray-800 font-semibold" id="detail-project-end-date"></p>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">Deskripsi</h3>
+                        <p class="text-gray-600" id="detail-project-description"></p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">Progress</h3>
+                        <div class="flex items-center gap-4">
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="progress-fill" id="detail-project-progress-bar" style="width: 0%"></div>
+                            </div>
+                            <span class="font-medium whitespace-nowrap" id="detail-project-progress-text">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-medium text-gray-800">Tim</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peran</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Bergabung</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="detail-project-team-body">
+                                    <!-- Team data will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-medium text-gray-800">Dokumen</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Dokumen</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Unggah</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="detail-project-document-body">
+                                    <!-- Document data will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="document.getElementById('project-detail-modal').classList.add('hidden')" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Delete Confirmation -->
+    <div id="delete-modal" class="fixed inset-0 overflow-y-auto hidden z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Hapus proyek</h3>
+                            <div class="mt-2">
+                                <p id="delete-message" class="text-sm text-gray-500">Yakin ingin menghapus proyek ini?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button id="confirm-delete-btn" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Hapus
+                    </button>
+                    <button type="button" onclick="tutupModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 transition-all duration-300 ease-in-out transform translate-y-10 opacity-0 hidden z-50">
+        <div class="px-4 py-2 rounded-lg shadow-lg flex items-center min-w-[200px]">
+            <i id="toast-icon" class="mr-2"></i>
+            <span id="toast-message"></span>
+        </div>
+    </div>
+
+    <script>
+        // Data Sample - Ini akan diganti dengan data dari API
+        let projectData = [];
+        let taskData = [];
+        let minuteData = [];
+        let documentData = [];
+        let financeData = [];
+        let teamData = [];
+        let projectIdToDelete = null; // Variabel untuk menyimpan ID proyek yang akan dihapus
+
+        // DOM Elements
+        const projectTableBody = document.getElementById('project-table-body');
+        const searchInput = document.getElementById('search');
+        const statusFilter = document.getElementById('status-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const mainContentTitle = document.getElementById('main-content-title'); // New: Title in header
+
+        // Toast Notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            // Set icon based on type
+            let iconClass, bgColor;
+            switch(type) {
+                case 'success':
+                    iconClass = 'fas fa-check-circle text-white';
+                    bgColor = 'bg-green-500 text-white';
+                    break;
+                case 'error':
+                    iconClass = 'fas fa-times-circle text-white';
+                    bgColor = 'bg-red-500 text-white';
+                    break;
+                case 'warning':
+                    iconClass = 'fas fa-exclamation-triangle text-white';
+                    bgColor = 'bg-yellow-500 text-white';
+                    break;
+                default:
+                    iconClass = 'fas fa-info-circle text-white';
+                    bgColor = 'bg-blue-500 text-white';
+            }
+
+            toast.className = `fixed bottom-4 right-4 transition-all duration-300 ease-in-out transform ${bgColor}`;
+            toastIcon.className = iconClass;
+            toastMessage.textContent = message;
+
+            // Show toast
+            toast.classList.remove('hidden');
+            toast.classList.remove('translate-y-10');
+            toast.classList.remove('opacity-0');
+            toast.classList.add('translate-y-0');
+            toast.classList.add('opacity-100');
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-10');
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        // Render Table Rows
+        function renderTableRows(data, type) {
+            if (type === 'project') {
+                return data.map(projectRowRenderer).join('');
+            } else if (type === 'task') {
+                return data.map(taskRowRenderer).join('');
+            } else if (type === 'minute') {
+                return data.map(minuteRowRenderer).join('');
+            } else if (type === 'document') {
+                return data.map(documentRowRenderer).join('');
+            } else if (type === 'finance') {
+                return data.map(financeRowRenderer).join('');
+            } else if (type === 'team') {
+                return data.map(teamRowRenderer).join('');
+            }
+            return '';
+        }
+
+        // Project Row Renderer
+        function projectRowRenderer(project) {
+            return `
+                <tr>
+                    <td class="py-3 px-4 font-medium nama-proyek">${project.name}</td>
+                    <td class="py-3 px-4">${project.code}</td>
+                    <td class="py-3 px-4">${project.client}</td>
+                    <td class="py-3 px-4">${project.category}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-sm
+                            ${project.status === 'Aktif' ? 'bg-green-100 text-green-800' : ''}
+                            ${project.status === 'Review' ? 'bg-yellow-100 text-yellow-800' : ''}
+                            ${project.status === 'Ditunda' ? 'bg-red-100 text-red-800' : ''}
+                        ">${project.status}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-project-btn" data-project-id="${project.id}"><i class="fas fa-eye"></i></button>
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-project-btn" data-project-id="${project.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 confirm-delete-btn" data-project-id="${project.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Task Row Renderer
+        function taskRowRenderer(task) {
+            return `
+                <tr>
+                    <td class="py-3 px-4 font-medium">${task.name}</td>
+                    <td class="py-3 px-4">${task.project}</td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center gap-2">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/567dc3f2-ff66-456e-a540-30da3544795b.png" alt="Foto penanggung jawab tugas" class="rounded-full w-6 h-6">
+                            <span>${task.responsible}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-sm
+                            ${task.priority === 'Tinggi' ? 'bg-red-100 text-red-800' : ''}
+                            ${task.priority === 'Sedang' ? 'bg-orange-100 text-orange-800' : ''}
+                            ${task.priority === 'Rendah' ? 'bg-blue-100 text-blue-800' : ''}
+                        ">${task.priority}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-sm
+                            ${task.status === 'Dalam Pengerjaan' ? 'bg-yellow-100 text-yellow-800' : ''}
+                            ${task.status === 'Review' ? 'bg-purple-100 text-purple-800' : ''}
+                            ${task.status === 'Tertunda' ? 'bg-red-100 text-red-800' : ''}
+                            ${task.status === 'Selesai' ? 'bg-green-100 text-green-800' : ''}
+                            ${task.status === 'Belum Dimulai' ? 'bg-gray-100 text-gray-800' : ''}
+                        ">${task.status}</span>
+                    </td>
+                    <td class="py-3 px-4">${task.dueDate}</td>
+                    <td class="py-3 px-4">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${task.progress}%;"></div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-task-btn" data-task-id="${task.id}"><i class="fas fa-eye"></i></button>
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-task-btn" data-task-id="${task.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-task-btn" data-task-id="${task.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Minute Row Renderer
+        function minuteRowRenderer(minute) {
+            return `
+                <tr>
+                    <td class="py-3 px-4 font-medium">${minute.title}</td>
+                    <td class="py-3 px-4">${minute.project_name}</td>
+                    <td class="py-3 px-4">${minute.date}</td>
+                    <td class="py-3 px-4">
+                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-minute-btn" data-minute-id="${minute.id}"><i class="fas fa-eye"></i></button>
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-minute-btn" data-minute-id="${minute.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-minute-btn" data-minute-id="${minute.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Document Row Renderer
+        function documentRowRenderer(doc) {
+            return `
+                <tr>
+                    <td class="py-3 px-4 font-medium">${doc.name}</td>
+                    <td class="py-3 px-4">${doc.project_name}</td>
+                    <td class="py-3 px-4">${doc.type}</td>
+                    <td class="py-3 px-4">${doc.upload_date}</td>
+                    <td class="py-3 px-4">
+                        <a href="${doc.file_url}" target="_blank" class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-download"></i> Unduh</a>
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-document-btn" data-document-id="${doc.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-document-btn" data-document-id="${doc.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Finance Row Renderer
+        function financeRowRenderer(finance) {
+            return `
+                <tr>
+                    <td class="py-3 px-4 font-medium">${finance.description}</td>
+                    <td class="py-3 px-4">${finance.project_name}</td>
+                    <td class="py-3 px-4">${finance.transaction_type}</td>
+                    <td class="py-3 px-4">Rp ${new Intl.NumberFormat('id-ID').format(finance.amount)}</td>
+                    <td class="py-3 px-4">${finance.date}</td>
+                </tr>
+            `;
+        }
+
+        // Team Row Renderer
+        function teamRowRenderer(member) {
+            return `
+                <tr>
+                    <td class="py-3 px-4 font-medium">${member.name}</td>
+                    <td class="py-3 px-4">${member.email}</td>
+                    <td class="py-3 px-4">${member.role}</td>
+                    <td class="py-3 px-4">
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-team-btn" data-team-id="${member.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-team-btn" data-team-id="${member.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+
+        // Load Projects from API
+        async function loadProjects() {
+            try {
+                const response = await fetch('get_projects.php');
+                projectData = await response.json();
+                applyProjectFilters();
+                // Update active projects on dashboard
+                const activeProjectsList = document.getElementById('active-projects-list');
+                if (activeProjectsList) {
+                    const activeProjects = projectData.filter(p => p.status === 'Aktif').slice(0, 5);
+                    if (activeProjects.length > 0) {
+                        activeProjectsList.innerHTML = activeProjects.map(project => `
+                            <div class="flex justify-between items-center py-2 border-b last:border-b-0">
+                                <span>${project.name}</span>
+                                <span class="text-sm text-gray-500">${project.status}</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        activeProjectsList.innerHTML = '<p class="text-gray-500">Tidak ada proyek aktif.</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                showToast('Gagal memuat data proyek', 'error');
+            }
+        }
+
+        // Apply Filters to Projects
+        function applyProjectFilters() {
+            let filtered = [...projectData];
+
+            // Search Filter
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(project =>
+                    project.name.toLowerCase().includes(searchTerm) ||
+                    project.code.toLowerCase().includes(searchTerm) ||
+                    project.client.toLowerCase().includes(searchTerm) ||
+                    project.category.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Status Filter
+            const statusTerm = statusFilter.value;
+            if (statusTerm) {
+                filtered = filtered.filter(project => project.status === statusTerm);
+            }
+
+            // Category Filter
+            const categoryTerm = categoryFilter.value;
+            if (categoryTerm) {
+                filtered = filtered.filter(project => project.category === categoryTerm);
+            }
+
+            // Render Filtered Projects
+            projectTableBody.innerHTML = renderTableRows(filtered, 'project');
+
+            // Initialize action buttons for projects
+            initProjectActionButtons();
+        }
+
+        // Initialize Project Action Buttons
+        function initProjectActionButtons() {
+            // 👁 VIEW PROJECT
+            document.querySelectorAll('.view-project-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const projectId = this.dataset.projectId;
+                    const project = projectData.find(p => p.id == projectId);
+                    if (project) {
+                        // Populate and show the project detail modal
+                        document.getElementById('project-detail-modal').classList.remove('hidden');
+                        document.querySelector('#project-detail-modal h2').textContent = project.name;
+
+                        // Update status, category, code
+                        document.getElementById('detail-project-status').textContent = project.status;
+                        document.getElementById('detail-project-category').textContent = project.category;
+                        document.getElementById('detail-project-code').textContent = project.code;
+
+                        // Update client, dates, description
+                        document.getElementById('detail-project-client').textContent = project.client;
+                        document.getElementById('detail-project-start-date').textContent = project.start_date;
+                        document.getElementById('detail-project-end-date').textContent = project.end_date;
+                        document.getElementById('detail-project-description').textContent = project.description;
+
+                        // Update progress
+                        const currentProgress = project.progress || 0;
+                        document.getElementById('detail-project-progress-bar').style.width = `${currentProgress}%`;
+                        document.getElementById('detail-project-progress-text').textContent = `${currentProgress}%`;
+
+                        // Load and display team members for this project
+                        loadTeamForProject(projectId);
+                        // Load and display documents for this project
+                        loadDocumentsForProject(projectId);
+                    }
+                });
+            });
+
+            // ✏️ EDIT PROJECT
+            document.querySelectorAll('.edit-project-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const projectId = this.dataset.projectId;
+                    const project = projectData.find(p => p.id == projectId);
+                    if (project) {
+                        // Isi form modal tambah proyek dengan data proyek yang akan diedit
+                        document.getElementById('project-name').value = project.name;
+                        document.getElementById('project-code').value = project.code;
+                        document.getElementById('client').value = project.client;
+                        document.getElementById('category').value = project.category;
+                        document.getElementById('start-date').value = project.start_date;
+                        document.getElementById('end-date').value = project.end_date;
+                        document.getElementById('description').value = project.description;
+
+                        // Tambahkan input hidden untuk ID proyek agar simpan_project.php tahu ini adalah update
+                        let hiddenIdInput = document.getElementById('project-id-hidden');
+                        if (!hiddenIdInput) {
+                            hiddenIdInput = document.createElement('input');
+                            hiddenIdInput.type = 'hidden';
+                            hiddenIdInput.id = 'project-id-hidden';
+                            hiddenIdInput.name = 'project-id'; // Nama untuk PHP
+                            document.getElementById('project-form').appendChild(hiddenIdInput);
+                        }
+                        hiddenIdInput.value = project.id;
+
+                        // Ubah judul modal
+                        document.querySelector('#add-project-modal h3').textContent = 'Edit Proyek';
+                        document.getElementById('status-message').textContent = 'Update'; // Change button text
+
+                        // Tampilkan modal
+                        document.getElementById('add-project-modal').classList.remove('hidden');
+                    }
+                });
+            });
+
+            // 🗑 DELETE PROJECT
+            document.querySelectorAll('.confirm-delete-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const projectId = this.dataset.projectId;
+                    const project = projectData.find(p => p.id == projectId);
+                    if (project) {
+                        showDeleteModal(project.id, project.name);
+                    }
+                });
+            });
+        }
+
+        // Load Team Members for a specific project (example, needs API endpoint)
+        async function loadTeamForProject(projectId) {
+            const teamBody = document.getElementById('detail-project-team-body');
+            teamBody.innerHTML = '<tr><td colspan="3" class="text-center py-4">Memuat data tim...</td></tr>';
+            try {
+                // Assuming you have an API endpoint like get_team_by_project.php?project_id=X
+                const response = await fetch(`get_team.php?project_id=${projectId}`); // Modify this to filter by project_id if your API supports it
+                const teamMembers = await response.json();
+
+                // Filter team members by project ID if the API doesn't do it
+                const filteredTeam = teamMembers.filter(member => member.project_id == projectId); // Assuming 'project_id' field in Team table
+
+                if (filteredTeam.length > 0) {
+                    teamBody.innerHTML = filteredTeam.map(member => `
+                        <tr>
+                            <td class="py-3 px-4">${member.name}</td>
+                            <td class="py-3 px-4">${member.role}</td>
+                            <td class="py-3 px-4">${member.join_date}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    teamBody.innerHTML = '<tr><td colspan="3" class="text-center py-4">Tidak ada anggota tim untuk proyek ini.</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading team for project:', error);
+                teamBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-red-500">Gagal memuat data tim.</td></tr>';
+            }
+        }
+
+        // Load Documents for a specific project (example, needs API endpoint)
+        async function loadDocumentsForProject(projectId) {
+            const documentBody = document.getElementById('detail-project-document-body');
+            documentBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Memuat data dokumen...</td></tr>';
+            try {
+                // Assuming you have an API endpoint like get_documents_by_project.php?project_id=X
+                const response = await fetch(`get_document.php?project_id=${projectId}`); // Modify this to filter by project_id if your API supports it
+                const documents = await response.json();
+
+                // Filter documents by project ID if the API doesn't do it
+                const filteredDocuments = documents.filter(doc => doc.project_id == projectId); // Assuming 'project_id' field in Documents table
+
+                if (filteredDocuments.length > 0) {
+                    documentBody.innerHTML = filteredDocuments.map(doc => `
+                        <tr>
+                            <td class="py-3 px-4">${doc.name}</td>
+                            <td class="py-3 px-4">${doc.type}</td>
+                            <td class="py-3 px-4">${doc.upload_date}</td>
+                            <td class="py-3 px-4">
+                                <a href="${doc.file_url}" target="_blank" class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-download"></i> Unduh</a>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    documentBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Tidak ada dokumen untuk proyek ini.</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading documents for project:', error);
+                documentBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-red-500">Gagal memuat data dokumen.</td></tr>';
+            }
+        }
+
+
+        // Show Delete Modal
+        function showDeleteModal(id, name) {
+            projectIdToDelete = id;
+            document.getElementById('delete-message').textContent = `Yakin ingin menghapus proyek "${name}" ini?`;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        // Close Modal
+        function tutupModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            projectIdToDelete = null;
+        }
+
+        // Load Other Data (Tasks, Minutes, Documents, Finance, Team) - These functions are already present but might need filtering logic for dashboard
+        async function loadTasks() {
+            try {
+                const response = await fetch('get_tasks.php');
+                taskData = await response.json();
+                // Example: Populate upcoming tasks on dashboard
+                const upcomingTasksList = document.getElementById('upcoming-tasks-list');
+                if (upcomingTasksList) {
+                    const today = new Date();
+                    const upcoming = taskData.filter(task => new Date(task.dueDate) >= today).slice(0, 5); // Get top 5 upcoming
+                    if (upcoming.length > 0) {
+                        upcomingTasksList.innerHTML = upcoming.map(task => `
+                            <div class="flex justify-between items-center py-2 border-b last:border-b-0">
+                                <span>${task.name}</span>
+                                <span class="text-sm text-gray-500">${task.dueDate}</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        upcomingTasksList.innerHTML = '<p class="text-gray-500">Tidak ada tugas mendatang.</p>';
+                    }
+                }
+                // Populate tasks table
+                document.getElementById('task-table-body').innerHTML = renderTableRows(taskData, 'task');
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        async function loadMinutes() {
+            try {
+                const response = await fetch('get_minute.php');
+                minuteData = await response.json();
+                document.getElementById('minute-table-body').innerHTML = renderTableRows(minuteData, 'minute');
+            } catch (error) {
+                console.error('Error loading minutes:', error);
+            }
+        }
+
+        async function loadDocuments() {
+            try {
+                const response = await fetch('get_document.php');
+                documentData = await response.json();
+                document.getElementById('document-table-body').innerHTML = renderTableRows(documentData, 'document');
+            } catch (error) {
+                console.error('Error loading documents:', error);
+            }
+        }
+
+        async function loadFinance() {
+            try {
+                const response = await fetch('get_finance.php');
+                financeData = await response.json();
+                document.getElementById('finance-table-body').innerHTML = renderTableRows(financeData, 'finance');
+            } catch (error) {
+                console.error('Error loading finance:', error);
+            }
+        }
+
+        async function loadTeam() {
+            try {
+                const response = await fetch('get_team.php');
+                teamData = await response.json();
+                // Example: Populate team members on dashboard
+                const teamMembersList = document.getElementById('team-members-list');
+                if (teamMembersList) {
+                    if (teamData.length > 0) {
+                        teamMembersList.innerHTML = teamData.slice(0, 5).map(member => `
+                            <div class="flex items-center space-x-2 py-2 border-b last:border-b-0">
+                                <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/567dc3f2-ff66-456e-a540-30da3544795b.png" alt="${member.name}" class="rounded-full w-6 h-6">
+                                <span>${member.name} (${member.role})</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        teamMembersList.innerHTML = '<p class="text-gray-500">Tidak ada anggota tim.</p>';
+                    }
+                }
+                // Populate team table
+                document.getElementById('team-table-body').innerHTML = renderTableRows(teamData, 'team');
+            } catch (error) {
+                console.error('Error loading team:', error);
+            }
+        }
+
+        // Sidebar toggle function
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Function to show specific page content
+        function showPage(pageId, pageTitle) {
+            // Hide all page contents
+            document.querySelectorAll('.page-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Show the selected page content
+            const activePage = document.getElementById(pageId);
+            if (activePage) {
+                activePage.classList.add('active');
+            }
+
+            // Update the main content title
+            mainContentTitle.textContent = pageTitle;
+
+            // Update active link in sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('bg-blue-700');
+                link.classList.add('hover:bg-blue-700');
+            });
+            const currentActiveLink = document.querySelector(`.sidebar-link[data-page="${pageId}"]`);
+            if (currentActiveLink) {
+                currentActiveLink.classList.add('bg-blue-700');
+                currentActiveLink.classList.remove('hover:bg-blue-700');
+            }
+
+            // Close sidebar on mobile after selection
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 640 && sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        }
+
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize sidebar toggle
+            document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
+            
+            // Add event listeners for sidebar links
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const pageId = this.dataset.page;
+                    const pageTitle = this.querySelector('span').textContent;
+                    showPage(pageId, pageTitle);
+                });
+            });
+
+            // Load initial data for all sections
+            loadProjects();
+            loadTasks();
+            loadMinutes();
+            loadDocuments();
+            loadFinance();
+            loadTeam();
+
+            // Filter Event Listeners (for Proyek view)
+            searchInput.addEventListener('input', applyProjectFilters);
+            statusFilter.addEventListener('change', applyProjectFilters);
+            categoryFilter.addEventListener('change', applyProjectFilters);
+
+            // Modal Event Listeners
+            document.getElementById('add-project-btn')?.addEventListener('click', () => {
+                document.querySelector('#add-project-modal h3').textContent = 'Tambah Proyek Baru';
+                document.getElementById('status-message').textContent = 'Simpan'; // Reset button text
+                document.getElementById('project-form').reset(); // Clear form
+                const hiddenIdInput = document.getElementById('project-id-hidden');
+                if (hiddenIdInput) hiddenIdInput.remove(); // Remove hidden ID for new project
+                document.getElementById('add-project-modal').classList.remove('hidden');
+            });
+
+            document.getElementById('close-project-modal')?.addEventListener('click', () => {
+                document.getElementById('add-project-modal').classList.add('hidden');
+                document.getElementById('project-form').reset();
+                const hiddenIdInput = document.getElementById('project-id-hidden');
+                if (hiddenIdInput) hiddenIdInput.remove();
+            });
+
+            document.getElementById('cancel-project-btn')?.addEventListener('click', () => {
+                document.getElementById('add-project-modal').classList.add('hidden');
+                document.getElementById('project-form').reset();
+                const hiddenIdInput = document.getElementById('project-id-hidden');
+                if (hiddenIdInput) hiddenIdInput.remove();
+            });
+
+            // Delete Confirmation Button
+            document.getElementById('confirm-delete-btn')?.addEventListener('click', function() {
+                if (projectIdToDelete) {
+                    fetch('hapus_proyek.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ id: projectIdToDelete })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('Proyek berhasil dihapus!', 'success');
+                            loadProjects(); // Reload projects after deletion
+                        } else {
+                            showToast(data.message || 'Gagal menghapus proyek', 'error');
+                        }
+                        tutupModal();
+                    })
+                    .catch(error => {
+                        console.error('Error deleting project:', error);
+                        showToast('Terjadi kesalahan saat menghapus proyek', 'error');
+                        tutupModal();
+                    });
+                }
+            });
+
+            // Form Submission
+            document.getElementById('project-form')?.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                document.getElementById('loading-spinner').classList.remove('hidden');
+                document.getElementById('status-message').innerText = 'Menyimpan...';
+
+                const formData = new FormData(this);
+
+                fetch('simpan_project.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(response => {
+                    console.log('Respon dari PHP:', response);
+                    if (response.success) {
+                        loadProjects();
+                        this.reset();
+                        document.getElementById('add-project-modal').classList.add('hidden');
+                        showToast(response.message || 'Proyek berhasil disimpan', 'success');
+
+                        // Remove hidden ID input if exists
+                        const hiddenIdInput = document.getElementById('project-id-hidden');
+                        if (hiddenIdInput) hiddenIdInput.remove();
+                    } else {
+                        showToast(response.message || 'Gagal menyimpan proyek', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving project:', error);
+                    showToast('Terjadi kesalahan saat menyimpan proyek', 'error');
+                })
+                .finally(() => {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                    document.getElementById('status-message').innerText = 'Simpan'; // Reset button text
+                });
+            });
+            
+        });
+        
+        function openClientModal() {
+            document.getElementById('client-modal').classList.remove('hidden');
+        }
+        
+        function closeClientModal() {
+            document.getElementById('client-modal').classList.add('hidden');
+            document.getElementById('new-client-name').value = '';
+        }
+        
+        function simpanClientBaru() {
+            const name = document.getElementById('new-client-name').value.trim();
+            if (!name) {
+                alert('Nama klien tidak boleh kosong.');
+                return;
+            }
+        
+            const formData = new FormData();
+            formData.append('name', name);
+        
+            fetch('simpan_client.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Respon dari Server:', data);
+                if (data.success) {
+                    closeClientModal();
+                    loadClients(); // Re-fetch daftar klien
+                } else {
+                    alert(data.message || 'Gagal menambahkan klien.');
+                }
+            })
+            .catch(err => {
+                console.error('Gagal simpan klien:', err);
+                alert('Terjadi kesalahan.');
+            });
+        }
+        
+        function loadClients() {
+            fetch('get_clients.php')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('client');
+                    select.innerHTML = '<option value="">Pilih Klien</option>';
+                    data.forEach(client => {
+                        const option = document.createElement('option');
+                        option.value = client.id;
+                        option.textContent = client.name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(err => console.error('Gagal load klien:', err));
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadClients);
+    </script>
+</body>
+</html>

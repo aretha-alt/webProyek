@@ -1,0 +1,2249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Proyek</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Mobile first styles */
+        @media (max-width: 640px) {
+            #sidebar {
+                position: fixed;
+                height: 100vh;
+                z-index: 40;
+                transform: translateX(-100%);
+            }
+            #sidebar.active {
+                transform: translateX(0);
+            }
+        }
+
+        .progress-bar {
+            @apply w-full bg-gray-200 rounded-full h-2.5;
+        }
+        .progress-fill {
+            @apply h-2.5 rounded-full; /* Base style, color will be dynamic */
+        }
+        .slide-fade-enter-active, .slide-fade-leave-active {
+            transition: all 0.3s ease;
+        }
+        .slide-fade-enter-from, .slide-fade-leave-to {
+            transform: translateX(20px);
+            opacity: 0;
+        }
+        /* Styles for dynamic content visibility */
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+        /* Table row hover effect */
+        .table-row-hover:hover {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div id="sidebar" class="w-64 bg-blue-800 text-white transition-all duration-300 ease-in-out">
+            <div class="p-4 border-b border-blue-700">
+                <h1 class="text-xl font-bold">ProjectFlow</h1>
+            </div>
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 bg-blue-700 rounded-lg" data-page="dashboard-view">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="proyek-view">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>Proyek</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="tugas-view">
+                            <i class="fas fa-tasks"></i>
+                            <span>Tugas</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="berita-acara-view">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Berita Acara</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="dokumen-view">
+                            <i class="fas fa-file-contract"></i>
+                            <span>Dokumen</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="keuangan-view">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Keuangan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-link flex items-center space-x-2 px-4 py-2 hover:bg-blue-700 rounded-lg" data-page="tim-view">
+                            <i class="fas fa-users"></i>
+                            <span>Tim</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm">
+                <div class="flex justify-between items-center p-4">
+                    <div class="flex items-center space-x-4">
+                        <button id="menu-toggle" class="p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2 id="main-content-title" class="text-xl font-semibold">Dashboard</h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button class="p-2 rounded-lg hover:bg-gray-100 relative">
+                            <i class="fas fa-bell"></i>
+                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        <div class="flex items-center space-x-2">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/e80ce967-c976-426e-8858-2747c6b4187b.png" alt="Foto profil pengguna" class="rounded-full w-8 h-8">
+                            <span class="font-medium">Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <!-- Dashboard View -->
+                <div id="dashboard-view" class="page-content active mb-8">
+                    <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold mb-2">Proyek Aktif</h3>
+                            <div id="active-projects-list"></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold mb-2">Tugas Mendatang</h3>
+                            <div id="upcoming-tasks-list"></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold mb-2">Tim</h3>
+                            <div id="team-members-list"></div>
+                        </div>
+                    </div>
+                    <div class="mt-6 bg-white p-4 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-2">Progress Proyek</h3>
+                        <div id="project-progress-chart"></div>
+                    </div>
+                </div>
+
+                <!-- Proyek View (Existing content for projects) -->
+                <div id="proyek-view" class="page-content">
+                    <!-- Header dan Kontrol Proyek -->
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Daftar Proyek</h1>
+                            <p class="text-gray-600">Kelola semua proyek Anda di satu tempat</p>
+                        </div>
+                        <button id="add-project-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Tambah Proyek</span>
+                        </button>
+                    </div>
+
+                    <!-- Filter dan Pencarian -->
+                    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Cari Proyek</label>
+                                <input type="text" id="search" placeholder="Nama proyek, kode, klien..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select id="status-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Status</option>
+                                    <option>Aktif</option>
+                                    <option>Review</option>
+                                    <option>Ditunda</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="category-filter" class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                                <select id="category-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Kategori</option>
+                                    <option>Infrastruktur</option>
+                                    <option>IT</option>
+                                    <option>Konstruksi</option>
+                                    <option>Telekomunikasi</option>
+                                    <option>Manufaktur</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs Navigasi -->
+                    <div class="flex border-b mb-6">
+                        <button class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600">Semua Proyek</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Tugas</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Berita Acara</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Dokumen</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Keuangan</button>
+                        <button class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Tim</button>
+                    </div>
+
+                    <!-- Tabel Proyek -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Proyek</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klien</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="project-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data proyek akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Sebelumnya</a>
+                                <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Berikutnya</a>
+                            </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Menampilkan <span class="font-medium">1</span> sampai <span class="font-medium">10</span> dari <span class="font-medium">20</span> hasil
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Sebelumnya</span>
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                        <a href="#" aria-current="page" class="z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">1</a>
+                                        <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">2</a>
+                                        <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">3</a>
+                                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Berikutnya</span>
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tugas View (New content for Tasks) -->
+                <div id="tugas-view" class="page-content">
+                    <!-- Header dan Kontrol Tugas -->
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Daftar Tugas</h1>
+                            <p class="text-gray-600">Kelola semua tugas proyek Anda di sini.</p>
+                            <p class="text-sm text-gray-500 mt-2">Total Tugas Aktif: <span id="total-active-tasks" class="font-semibold">0</span></p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="export-pdf-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>Export PDF</span>
+                            </button>
+                            <button id="export-excel-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-file-excel"></i>
+                                <span>Export Excel</span>
+                            </button>
+                            <button id="add-task-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Tambah Tugas</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter dan Pencarian Tugas -->
+                    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label for="task-search" class="block text-sm font-medium text-gray-700 mb-1">Cari Tugas</label>
+                                <input type="text" id="task-search" placeholder="Nama tugas, proyek, penanggung jawab..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="task-status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status Tugas</label>
+                                <select id="task-status-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Status</option>
+                                    <option value="Belum Dimulai">Belum Dimulai</option>
+                                    <option value="Dalam Pengerjaan">Dalam Pengerjaan</option>
+                                    <option value="Review">Review</option>
+                                    <option value="Tertunda">Tertunda</option>
+                                    <option value="Selesai">Selesai</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="task-priority-filter" class="block text-sm font-medium text-gray-700 mb-1">Prioritas</label>
+                                <select id="task-priority-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Prioritas</option>
+                                    <option value="Tinggi">Tinggi</option>
+                                    <option value="Sedang">Sedang</option>
+                                    <option value="Rendah">Rendah</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="task-start-date-filter" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+                                <input type="date" id="task-start-date-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="task-due-date-filter" class="block text-sm font-medium text-gray-700 mb-1">Batas Waktu</label>
+                                <input type="date" id="task-due-date-filter" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center space-x-2">
+                            <button id="bulk-action-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg flex items-center space-x-2" disabled>
+                                <i class="fas fa-cogs"></i>
+                                <span>Aksi Massal (<span id="selected-tasks-count">0</span>)</span>
+                            </button>
+                            <select id="bulk-action-select" class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+                                <option value="">Pilih Aksi</option>
+                                <option value="delete">Hapus</option>
+                                <option value="status-belum-dimulai">Ubah Status: Belum Dimulai</option>
+                                <option value="status-dalam-pengerjaan">Ubah Status: Dalam Pengerjaan</option>
+                                <option value="status-review">Ubah Status: Review</option>
+                                <option value="status-tertunda">Ubah Status: Tertunda</option>
+                                <option value="status-selesai">Ubah Status: Selesai</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Tugas -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <input type="checkbox" id="select-all-tasks" class="rounded text-blue-600">
+                                        </th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="name">Nama Tugas <i class="fas fa-sort ml-1"></i></th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penanggung Jawab</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioritas</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Mulai</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="dueDate">Batas Waktu <i class="fas fa-sort ml-1"></i></th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="progress">Progress <i class="fas fa-sort ml-1"></i></th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="task-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data tugas akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Pagination for tasks -->
+                        <div class="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                <button id="prev-task-page-mobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Sebelumnya</button>
+                                <button id="next-task-page-mobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Berikutnya</button>
+                            </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Menampilkan <span class="font-medium" id="task-pagination-start">1</span> sampai <span class="font-medium" id="task-pagination-end">10</span> dari <span class="font-medium" id="task-pagination-total">0</span> hasil
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <button id="prev-task-page" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Sebelumnya</span>
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <div id="task-pagination-numbers" class="inline-flex">
+                                            <!-- Page numbers will be inserted here -->
+                                        </div>
+                                        <button id="next-task-page" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Berikutnya</span>
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Berita Acara View (New content for Minutes) -->
+                <div id="berita-acara-view" class="page-content">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4">Daftar Berita Acara</h1>
+                    <p class="text-gray-600 mb-6">Kelola semua berita acara rapat dan kejadian penting.</p>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek Terkait</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="minute-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data berita acara akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dokumen View (New content for Documents) -->
+                <div id="dokumen-view" class="page-content">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4">Daftar Dokumen</h1>
+                    <p class="text-gray-600 mb-6">Kelola semua dokumen proyek Anda.</p>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Dokumen</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek Terkait</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Unggah</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="document-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data dokumen akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keuangan View (New content for Finance) -->
+                <div id="keuangan-view" class="page-content">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4">Manajemen Keuangan</h1>
+                    <p class="text-gray-600 mb-6">Pantau pemasukan dan pengeluaran proyek.</p>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek Terkait</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Transaksi</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="finance-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data keuangan akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tim View (New content for Team) -->
+                <div id="tim-view" class="page-content">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4">Anggota Tim</h1>
+                    <p class="text-gray-600 mb-6">Kelola anggota tim dan peran mereka.</p>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peran</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="team-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Data tim akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Proyek -->
+    <div id="add-project-modal" class="fixed inset-0 overflow-y-auto hidden z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Tambah Proyek Baru</h3>
+                        <button id="close-project-modal" class="text-gray-400 hover:text-gray-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="project-form">
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label for="project-name" class="block text-sm font-medium text-gray-700">Nama Proyek *</label>
+                                    <input type="text" id="project-name" name="project-name" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="project-code" class="block text-sm font-medium text-gray-700">Kode Proyek *</label>
+                                    <input type="text" id="project-code" name="project-code" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="client" class="block text-sm font-medium text-gray-700">Klien *</label>
+                                <select id="client" name="client" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">Pilih Klien</option>
+                                </select>
+                                <button type="button" onclick="openClientModal()" class="text-blue-600 text-sm underline hover:text-blue-800">+ Tambah Klien</button>
+                            </div>
+                            <div id="client-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                                <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                                    <h2 class="text-lg font-semibold mb-4">Tambah Klien Baru</h2>
+                                    <input type="text" id="new-client-name" placeholder="Nama Klien" class="w-full px-3 py-2 border rounded mb-4" />
+                                    <div class="flex justify-end space-x-2">
+                                        <button onclick="closeClientModal()" class="px-4 py-2 rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Batal</button>
+                                        <button onclick="simpanClientBaru()" class="px-4 py-2 rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Simpan</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label for="category" class="block text-sm font-medium text-gray-700">Kategori *</label>
+                                <select id="category" name="category" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">Pilih Kategori</option>
+                                    <option>Infrastruktur</option>
+                                    <option>IT</option>
+                                    <option>Konstruksi</option>
+                                    <option>Telekomunikasi</option>
+                                    <option>Manufaktur</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label for="start-date" class="block text-sm font-medium text-gray-700">Tanggal Mulai *</label>
+                                    <input type="date" id="start-date" name="start-date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="end-date" class="block text-sm font-medium text-gray-700">Tanggal Selesai *</label>
+                                    <input type="date" id="end-date" name="end-date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="description" class="block text-sm font-medium text-gray-700">Deskripsi</label>
+                                <textarea id="description" name="description" rows="3" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            <input type="hidden" id="project-id-hidden" name="project-id">
+                        </div>
+                        <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm">
+                                <span id="status-message">Simpan</span>
+                                <span id="loading-spinner" class="hidden ml-2">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </button>
+                            <button type="button" id="cancel-project-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah/Edit Tugas -->
+    <div id="task-modal" class="fixed inset-0 overflow-y-auto hidden z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="task-modal-title">Tambah Tugas Baru</h3>
+                        <button id="close-task-modal" class="text-gray-400 hover:text-gray-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="task-form">
+                        <div class="space-y-4">
+                            <div class="space-y-2">
+                                <label for="task-name" class="block text-sm font-medium text-gray-700">Nama Tugas *</label>
+                                <input type="text" id="task-name" name="name" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <p class="text-red-500 text-xs italic hidden" id="task-name-error">Nama Tugas wajib diisi.</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="task-project" class="block text-sm font-medium text-gray-700">Proyek *</label>
+                                <select id="task-project" name="project_id" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">Pilih Proyek</option>
+                                </select>
+                                <p class="text-red-500 text-xs italic hidden" id="task-project-error">Proyek wajib diisi.</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="task-responsible" class="block text-sm font-medium text-gray-700">Penanggung Jawab *</label>
+                                <select id="task-responsible" name="responsible_id" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">Pilih Penanggung Jawab</option>
+                                </select>
+                                <p class="text-red-500 text-xs italic hidden" id="task-responsible-error">Penanggung Jawab wajib diisi.</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Prioritas *</label>
+                                <div class="mt-2 flex flex-wrap gap-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" class="form-radio text-red-600" name="priority" value="Tinggi" required>
+                                        <span class="ml-2">Tinggi</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" class="form-radio text-yellow-600" name="priority" value="Sedang">
+                                        <span class="ml-2">Sedang</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" class="form-radio text-green-600" name="priority" value="Rendah">
+                                        <span class="ml-2">Rendah</span>
+                                    </label>
+                                </div>
+                                <p class="text-red-500 text-xs italic hidden" id="task-priority-error">Prioritas wajib diisi.</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="task-status" class="block text-sm font-medium text-gray-700">Status *</label>
+                                <select id="task-status" name="status" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">Pilih Status</option>
+                                    <option value="Belum Dimulai">Belum Dimulai</option>
+                                    <option value="Dalam Pengerjaan">Dalam Pengerjaan</option>
+                                    <option value="Review">Review</option>
+                                    <option value="Tertunda">Tertunda</option>
+                                    <option value="Selesai">Selesai</option>
+                                </select>
+                                <p class="text-red-500 text-xs italic hidden" id="task-status-error">Status wajib diisi.</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label for="task-start-date" class="block text-sm font-medium text-gray-700">Tanggal Mulai *</label>
+                                    <input type="date" id="task-start-date" name="start_date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <p class="text-red-500 text-xs italic hidden" id="task-start-date-error">Tanggal Mulai wajib diisi.</p>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="task-due-date" class="block text-sm font-medium text-gray-700">Batas Waktu *</label>
+                                    <input type="date" id="task-due-date" name="due_date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <p class="text-red-500 text-xs italic hidden" id="task-due-date-error">Batas Waktu wajib diisi.</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="task-progress" class="block text-sm font-medium text-gray-700">Progress (%) <span id="task-progress-value">0</span>%</label>
+                                <input type="range" id="task-progress" name="progress" min="0" max="100" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <input type="hidden" id="task-id-hidden" name="id">
+                        </div>
+                        <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm">
+                                <span id="task-submit-text">Simpan</span>
+                                <span id="task-loading-spinner" class="hidden ml-2">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </button>
+                            <button type="button" id="cancel-task-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail Proyek -->
+    <div id="project-detail-modal" class="fixed inset-0 overflow-y-auto hidden z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800"></h2>
+                        <button onclick="document.getElementById('project-detail-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex gap-2 flex-wrap" id="project-tags">
+                            <!-- Tags will be filled dynamically -->
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800" id="detail-project-status"></span>
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800" id="detail-project-category"></span>
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800" id="detail-project-code"></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 mb-6" id="project-basic-info">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Klien</p>
+                            <p class="text-gray-800 font-semibold" id="detail-project-client"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Tanggal Mulai</p>
+                            <p class="text-gray-800 font-semibold" id="detail-project-start-date"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Tanggal Selesai</p>
+                            <p class="text-gray-800 font-semibold" id="detail-project-end-date"></p>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">Deskripsi</h3>
+                        <p class="text-gray-600" id="detail-project-description"></p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">Progress</h3>
+                        <div class="flex items-center gap-4">
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="progress-fill" id="detail-project-progress-bar" style="width: 0%"></div>
+                            </div>
+                            <span class="font-medium whitespace-nowrap" id="detail-project-progress-text">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-medium text-gray-800">Tim</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peran</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Bergabung</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="detail-project-team-body">
+                                    <!-- Team data will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-medium text-gray-800">Dokumen</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Dokumen</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Unggah</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="detail-project-document-body">
+                                    <!-- Document data will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="document.getElementById('project-detail-modal').classList.add('hidden')" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Delete Confirmation -->
+    <div id="delete-modal" class="fixed inset-0 overflow-y-auto hidden z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="delete-modal-title">Hapus Item</h3>
+                            <div class="mt-2">
+                                <p id="delete-message" class="text-sm text-gray-500">Yakin ingin menghapus item ini?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button id="confirm-delete-btn" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Hapus
+                    </button>
+                    <button type="button" onclick="tutupModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 transition-all duration-300 ease-in-out transform translate-y-10 opacity-0 hidden z-50">
+        <div class="px-4 py-2 rounded-lg shadow-lg flex items-center min-w-[200px]">
+            <i id="toast-icon" class="mr-2"></i>
+            <span id="toast-message"></span>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script>
+        // Data Sample - Ini akan diganti dengan data dari API
+        let projectData = [];
+        let taskData = [];
+        let minuteData = [];
+        let documentData = [];
+        let financeData = [];
+        let teamData = [];
+        let clientData = []; // New: Client data
+        let responsibleData = []; // New: Responsible data for tasks
+
+        let projectIdToDelete = null; // Variabel untuk menyimpan ID proyek yang akan dihapus
+        let taskIdToDelete = null; // New: Variable for task to delete
+        let currentDeleteType = null; // 'project' or 'task'
+
+        // Pagination for Tasks
+        let currentPage = 1;
+        const rowsPerPage = 10;
+        let filteredAndSortedTasks = [];
+        let selectedTaskIds = new Set();
+        let currentSortColumn = 'dueDate';
+        let currentSortDirection = 'asc';
+
+        // DOM Elements
+        const projectTableBody = document.getElementById('project-table-body');
+        const searchInput = document.getElementById('search');
+        const statusFilter = document.getElementById('status-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const mainContentTitle = document.getElementById('main-content-title');
+
+        // Task DOM Elements
+        const taskTableBody = document.getElementById('task-table-body');
+        const taskSearchInput = document.getElementById('task-search');
+        const taskStatusFilter = document.getElementById('task-status-filter');
+        const taskPriorityFilter = document.getElementById('task-priority-filter');
+        const taskStartDateFilter = document.getElementById('task-start-date-filter');
+        const taskDueDateFilter = document.getElementById('task-due-date-filter');
+        const totalActiveTasksSpan = document.getElementById('total-active-tasks');
+        const selectAllTasksCheckbox = document.getElementById('select-all-tasks');
+        const bulkActionButton = document.getElementById('bulk-action-btn');
+        const bulkActionSelect = document.getElementById('bulk-action-select');
+        const selectedTasksCountSpan = document.getElementById('selected-tasks-count');
+
+        // Task Modal Elements
+        const taskModal = document.getElementById('task-modal');
+        const taskModalTitle = document.getElementById('task-modal-title');
+        const taskForm = document.getElementById('task-form');
+        const taskIdHidden = document.getElementById('task-id-hidden');
+        const taskNameInput = document.getElementById('task-name');
+        const taskProjectSelect = document.getElementById('task-project');
+        const taskResponsibleSelect = document.getElementById('task-responsible');
+        const taskPriorityRadios = document.querySelectorAll('input[name="priority"]');
+        const taskStatusSelect = document.getElementById('task-status');
+        const taskStartDateInput = document.getElementById('task-start-date');
+        const taskDueDateInput = document.getElementById('task-due-date');
+        const taskProgressInput = document.getElementById('task-progress');
+        const taskProgressValueSpan = document.getElementById('task-progress-value');
+        const taskSubmitText = document.getElementById('task-submit-text');
+        const taskLoadingSpinner = document.getElementById('task-loading-spinner');
+
+        // Validation Error Spans
+        const taskNameError = document.getElementById('task-name-error');
+        const taskProjectError = document.getElementById('task-project-error');
+        const taskResponsibleError = document.getElementById('task-responsible-error');
+        const taskPriorityError = document.getElementById('task-priority-error');
+        const taskStatusError = document.getElementById('task-status-error');
+        const taskStartDateError = document.getElementById('task-start-date-error');
+        const taskDueDateError = document.getElementById('task-due-date-error');
+
+
+        // Toast Notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            // Set icon based on type
+            let iconClass, bgColor;
+            switch(type) {
+                case 'success':
+                    iconClass = 'fas fa-check-circle text-white';
+                    bgColor = 'bg-green-500 text-white';
+                    break;
+                case 'error':
+                    iconClass = 'fas fa-times-circle text-white';
+                    bgColor = 'bg-red-500 text-white';
+                    break;
+                case 'warning':
+                    iconClass = 'fas fa-exclamation-triangle text-white';
+                    bgColor = 'bg-yellow-500 text-white';
+                    break;
+                default:
+                    iconClass = 'fas fa-info-circle text-white';
+                    bgColor = 'bg-blue-500 text-white';
+            }
+
+            toast.className = `fixed bottom-4 right-4 transition-all duration-300 ease-in-out transform ${bgColor}`;
+            toastIcon.className = iconClass;
+            toastMessage.textContent = message;
+
+            // Show toast
+            toast.classList.remove('hidden');
+            toast.classList.remove('translate-y-10');
+            toast.classList.remove('opacity-0');
+            toast.classList.add('translate-y-0');
+            toast.classList.add('opacity-100');
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-10');
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        // Render Table Rows
+        function renderTableRows(data, type) {
+            if (type === 'project') {
+                return data.map(projectRowRenderer).join('');
+            } else if (type === 'task') {
+                return data.map(taskRowRenderer).join('');
+            } else if (type === 'minute') {
+                return data.map(minuteRowRenderer).join('');
+            } else if (type === 'document') {
+                return data.map(documentRowRenderer).join('');
+            } else if (type === 'finance') {
+                return data.map(financeRowRenderer).join('');
+            } else if (type === 'team') {
+                return data.map(teamRowRenderer).join('');
+            }
+            return '';
+        }
+
+        // Project Row Renderer
+        function projectRowRenderer(project) {
+            return `
+                <tr class="table-row-hover">
+                    <td class="py-3 px-4 font-medium nama-proyek">${project.name}</td>
+                    <td class="py-3 px-4">${project.code}</td>
+                    <td class="py-3 px-4">${project.client}</td>
+                    <td class="py-3 px-4">${project.category}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-sm
+                            ${project.status === 'Aktif' ? 'bg-green-100 text-green-800' : ''}
+                            ${project.status === 'Review' ? 'bg-yellow-100 text-yellow-800' : ''}
+                            ${project.status === 'Ditunda' ? 'bg-red-100 text-red-800' : ''}
+                        ">${project.status}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-project-btn" data-project-id="${project.id}"><i class="fas fa-eye"></i></button>
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-project-btn" data-project-id="${project.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-project-btn" data-project-id="${project.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Task Row Renderer
+        function taskRowRenderer(task) {
+            const isSelected = selectedTaskIds.has(task.id);
+            const today = new Date();
+            const dueDate = new Date(task.dueDate);
+            const diffTime = dueDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            let deadlineWarning = '';
+            if (task.status !== 'Selesai' && diffDays <= 3 && diffDays >= 0) {
+                deadlineWarning = '<i class="fas fa-exclamation-triangle text-orange-500 ml-1" title="Mendekati deadline!"></i>';
+            } else if (task.status !== 'Selesai' && diffDays < 0) {
+                deadlineWarning = '<i class="fas fa-exclamation-circle text-red-500 ml-1" title="Deadline terlampaui!"></i>';
+            }
+
+            let priorityBadgeClass = '';
+            switch (task.priority) {
+                case 'Tinggi':
+                    priorityBadgeClass = 'bg-red-100 text-red-800';
+                    break;
+                case 'Sedang':
+                    priorityBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    break;
+                case 'Rendah':
+                    priorityBadgeClass = 'bg-green-100 text-green-800';
+                    break;
+            }
+
+            let statusBadgeClass = '';
+            let progressBarColorClass = '';
+            switch (task.status) {
+                case 'Selesai':
+                    statusBadgeClass = 'bg-green-100 text-green-800';
+                    progressBarColorClass = 'bg-green-600';
+                    break;
+                case 'Dalam Pengerjaan':
+                    statusBadgeClass = 'bg-blue-100 text-blue-800';
+                    progressBarColorClass = 'bg-blue-600';
+                    break;
+                case 'Tertunda':
+                    statusBadgeClass = 'bg-gray-100 text-gray-800';
+                    progressBarColorClass = 'bg-gray-400';
+                    break;
+                case 'Review':
+                    statusBadgeClass = 'bg-purple-100 text-purple-800';
+                    progressBarColorClass = 'bg-purple-600';
+                    break;
+                case 'Belum Dimulai':
+                    statusBadgeClass = 'bg-gray-100 text-gray-800';
+                    progressBarColorClass = 'bg-gray-400';
+                    break;
+            }
+
+            const responsibleMember = teamData.find(member => member.id == task.responsible_id);
+            const responsibleName = responsibleMember ? responsibleMember.name : 'N/A';
+            const responsibleAvatar = responsibleMember ? responsibleMember.avatar_url || 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/567dc3f2-ff66-456e-a540-30da3544795b.png' : 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/567dc3f2-ff66-456e-a540-30da3544795b.png';
+
+            const projectName = projectData.find(p => p.id == task.project_id)?.name || 'N/A';
+
+            return `
+                <tr class="table-row-hover">
+                    <td class="py-3 px-4">
+                        <input type="checkbox" class="task-checkbox rounded text-blue-600" data-task-id="${task.id}" ${isSelected ? 'checked' : ''}>
+                    </td>
+                    <td class="py-3 px-4 font-medium">${task.name} ${deadlineWarning}</td>
+                    <td class="py-3 px-4">${projectName}</td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center gap-2">
+                            <img src="${responsibleAvatar}" alt="${responsibleName}" class="rounded-full w-6 h-6">
+                            <span>${responsibleName}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-sm ${priorityBadgeClass}">${task.priority}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-sm ${statusBadgeClass}">${task.status}</span>
+                    </td>
+                    <td class="py-3 px-4">${task.startDate}</td>
+                    <td class="py-3 px-4">${task.dueDate}</td>
+                    <td class="py-3 px-4">
+                        <div class="progress-bar">
+                            <div class="progress-fill ${progressBarColorClass}" style="width: ${task.progress}%;"></div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-task-btn" data-task-id="${task.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-task-btn" data-task-id="${task.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Minute Row Renderer
+        function minuteRowRenderer(minute) {
+            return `
+                <tr class="table-row-hover">
+                    <td class="py-3 px-4 font-medium">${minute.title}</td>
+                    <td class="py-3 px-4">${minute.project_name}</td>
+                    <td class="py-3 px-4">${minute.date}</td>
+                    <td class="py-3 px-4">
+                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-minute-btn" data-minute-id="${minute.id}"><i class="fas fa-eye"></i></button>
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-minute-btn" data-minute-id="${minute.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-minute-btn" data-minute-id="${minute.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Document Row Renderer
+        function documentRowRenderer(doc) {
+            return `
+                <tr class="table-row-hover">
+                    <td class="py-3 px-4 font-medium">${doc.name}</td>
+                    <td class="py-3 px-4">${doc.project_name}</td>
+                    <td class="py-3 px-4">${doc.type}</td>
+                    <td class="py-3 px-4">${doc.upload_date}</td>
+                    <td class="py-3 px-4">
+                        <a href="${doc.file_url}" target="_blank" class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-download"></i> Unduh</a>
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-document-btn" data-document-id="${doc.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-document-btn" data-document-id="${doc.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Finance Row Renderer
+        function financeRowRenderer(finance) {
+            return `
+                <tr class="table-row-hover">
+                    <td class="py-3 px-4 font-medium">${finance.description}</td>
+                    <td class="py-3 px-4">${finance.project_name}</td>
+                    <td class="py-3 px-4">${finance.transaction_type}</td>
+                    <td class="py-3 px-4">Rp ${new Intl.NumberFormat('id-ID').format(finance.amount)}</td>
+                    <td class="py-3 px-4">${finance.date}</td>
+                </tr>
+            `;
+        }
+
+        // Team Row Renderer
+        function teamRowRenderer(member) {
+            return `
+                <tr class="table-row-hover">
+                    <td class="py-3 px-4 font-medium">${member.name}</td>
+                    <td class="py-3 px-4">${member.email}</td>
+                    <td class="py-3 px-4">${member.role}</td>
+                    <td class="py-3 px-4">
+                        <button class="text-yellow-500 hover:text-yellow-700 mr-2 edit-team-btn" data-team-id="${member.id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-team-btn" data-team-id="${member.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+
+        // Load Projects from API
+        async function loadProjects() {
+            try {
+                const response = await fetch('get_projects.php');
+                projectData = await response.json();
+                applyProjectFilters();
+                // Update active projects on dashboard
+                const activeProjectsList = document.getElementById('active-projects-list');
+                if (activeProjectsList) {
+                    const activeProjects = projectData.filter(p => p.status === 'Aktif').slice(0, 5);
+                    if (activeProjects.length > 0) {
+                        activeProjectsList.innerHTML = activeProjects.map(project => `
+                            <div class="flex justify-between items-center py-2 border-b last:border-b-0">
+                                <span>${project.name}</span>
+                                <span class="text-sm text-gray-500">${project.status}</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        activeProjectsList.innerHTML = '<p class="text-gray-500">Tidak ada proyek aktif.</p>';
+                    }
+                }
+                populateProjectDropdown(); // Populate project dropdown for tasks
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                showToast('Gagal memuat data proyek', 'error');
+            }
+        }
+
+        // Apply Filters to Projects
+        function applyProjectFilters() {
+            let filtered = [...projectData];
+
+            // Search Filter
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(project =>
+                    project.name.toLowerCase().includes(searchTerm) ||
+                    project.code.toLowerCase().includes(searchTerm) ||
+                    project.client.toLowerCase().includes(searchTerm) ||
+                    project.category.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Status Filter
+            const statusTerm = statusFilter.value;
+            if (statusTerm) {
+                filtered = filtered.filter(project => project.status === statusTerm);
+            }
+
+            // Category Filter
+            const categoryTerm = categoryFilter.value;
+            if (categoryTerm) {
+                filtered = filtered.filter(project => project.category === categoryTerm);
+            }
+
+            // Render Filtered Projects
+            projectTableBody.innerHTML = renderTableRows(filtered, 'project');
+
+            // Initialize action buttons for projects
+            initProjectActionButtons();
+        }
+
+        // Initialize Project Action Buttons
+        function initProjectActionButtons() {
+            // 👁 VIEW PROJECT
+            document.querySelectorAll('.view-project-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const projectId = this.dataset.projectId;
+                    const project = projectData.find(p => p.id == projectId);
+                    if (project) {
+                        // Populate and show the project detail modal
+                        document.getElementById('project-detail-modal').classList.remove('hidden');
+                        document.querySelector('#project-detail-modal h2').textContent = project.name;
+
+                        // Update status, category, code
+                        document.getElementById('detail-project-status').textContent = project.status;
+                        document.getElementById('detail-project-category').textContent = project.category;
+                        document.getElementById('detail-project-code').textContent = project.code;
+
+                        // Update client, dates, description
+                        document.getElementById('detail-project-client').textContent = project.client;
+                        document.getElementById('detail-project-start-date').textContent = project.start_date;
+                        document.getElementById('detail-project-end-date').textContent = project.end_date;
+                        document.getElementById('detail-project-description').textContent = project.description;
+
+                        // Update progress
+                        const currentProgress = project.progress || 0;
+                        document.getElementById('detail-project-progress-bar').style.width = `${currentProgress}%`;
+                        document.getElementById('detail-project-progress-text').textContent = `${currentProgress}%`;
+
+                        // Load and display team members for this project
+                        loadTeamForProject(projectId);
+                        // Load and display documents for this project
+                        loadDocumentsForProject(projectId);
+                    }
+                });
+            });
+
+            // ✏️ EDIT PROJECT
+            document.querySelectorAll('.edit-project-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const projectId = this.dataset.projectId;
+                    const project = projectData.find(p => p.id == projectId);
+                    if (project) {
+                        // Isi form modal tambah proyek dengan data proyek yang akan diedit
+                        document.getElementById('project-name').value = project.name;
+                        document.getElementById('project-code').value = project.code;
+                        document.getElementById('client').value = project.client;
+                        document.getElementById('category').value = project.category;
+                        document.getElementById('start-date').value = project.start_date;
+                        document.getElementById('end-date').value = project.end_date;
+                        document.getElementById('description').value = project.description;
+
+                        // Tambahkan input hidden untuk ID proyek agar simpan_project.php tahu ini adalah update
+                        let hiddenIdInput = document.getElementById('project-id-hidden');
+                        if (!hiddenIdInput) {
+                            hiddenIdInput = document.createElement('input');
+                            hiddenIdInput.type = 'hidden';
+                            hiddenIdInput.id = 'project-id-hidden';
+                            hiddenIdInput.name = 'project-id'; // Nama untuk PHP
+                            document.getElementById('project-form').appendChild(hiddenIdInput);
+                        }
+                        hiddenIdInput.value = project.id;
+
+                        // Ubah judul modal
+                        document.querySelector('#add-project-modal h3').textContent = 'Edit Proyek';
+                        document.getElementById('status-message').textContent = 'Update'; // Change button text
+
+                        // Tampilkan modal
+                        document.getElementById('add-project-modal').classList.remove('hidden');
+                    }
+                });
+            });
+
+            // 🗑 DELETE PROJECT
+            document.querySelectorAll('.delete-project-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const projectId = this.dataset.projectId;
+                    const project = projectData.find(p => p.id == projectId);
+                    if (project) {
+                        showDeleteModal(project.id, project.name, 'project');
+                    }
+                });
+            });
+        }
+
+        // Load Team Members for a specific project (example, needs API endpoint)
+        async function loadTeamForProject(projectId) {
+            const teamBody = document.getElementById('detail-project-team-body');
+            teamBody.innerHTML = '<tr><td colspan="3" class="text-center py-4">Memuat data tim...</td></tr>';
+            try {
+                // Assuming you have an API endpoint like get_team_by_project.php?project_id=X
+                const response = await fetch(`get_team.php?project_id=${projectId}`); // Modify this to filter by project_id if your API supports it
+                const teamMembers = await response.json();
+
+                // Filter team members by project ID if the API doesn't do it
+                const filteredTeam = teamMembers.filter(member => member.project_id == projectId); // Assuming 'project_id' field in Team table
+
+                if (filteredTeam.length > 0) {
+                    teamBody.innerHTML = filteredTeam.map(member => `
+                        <tr>
+                            <td class="py-3 px-4">${member.name}</td>
+                            <td class="py-3 px-4">${member.role}</td>
+                            <td class="py-3 px-4">${member.join_date}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    teamBody.innerHTML = '<tr><td colspan="3" class="text-center py-4">Tidak ada anggota tim untuk proyek ini.</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading team for project:', error);
+                teamBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-red-500">Gagal memuat data tim.</td></tr>';
+            }
+        }
+
+        // Load Documents for a specific project (example, needs API endpoint)
+        async function loadDocumentsForProject(projectId) {
+            const documentBody = document.getElementById('detail-project-document-body');
+            documentBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Memuat data dokumen...</td></tr>';
+            try {
+                // Assuming you have an API endpoint like get_documents_by_project.php?project_id=X
+                const response = await fetch(`get_document.php?project_id=${projectId}`); // Modify this to filter by project_id if your API supports it
+                const documents = await response.json();
+
+                // Filter documents by project ID if the API doesn't do it
+                const filteredDocuments = documents.filter(doc => doc.project_id == projectId); // Assuming 'project_id' field in Documents table
+
+                if (filteredDocuments.length > 0) {
+                    documentBody.innerHTML = filteredDocuments.map(doc => `
+                        <tr>
+                            <td class="py-3 px-4">${doc.name}</td>
+                            <td class="py-3 px-4">${doc.type}</td>
+                            <td class="py-3 px-4">${doc.upload_date}</td>
+                            <td class="py-3 px-4">
+                                <a href="${doc.file_url}" target="_blank" class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-download"></i> Unduh</a>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    documentBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Tidak ada dokumen untuk proyek ini.</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading documents for project:', error);
+                documentBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-red-500">Gagal memuat data dokumen.</td></tr>';
+            }
+        }
+
+
+        // Show Delete Modal
+        function showDeleteModal(id, name, type) {
+            currentDeleteType = type;
+            if (type === 'project') {
+                projectIdToDelete = id;
+                document.getElementById('delete-modal-title').textContent = 'Hapus Proyek';
+                document.getElementById('delete-message').textContent = `Yakin ingin menghapus proyek "${name}" ini?`;
+            } else if (type === 'task') {
+                taskIdToDelete = id;
+                document.getElementById('delete-modal-title').textContent = 'Hapus Tugas';
+                document.getElementById('delete-message').textContent = `Yakin ingin menghapus tugas "${name}" ini?`;
+            }
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        // Close Modal
+        function tutupModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            projectIdToDelete = null;
+            taskIdToDelete = null;
+            currentDeleteType = null;
+        }
+
+        // Load Other Data (Tasks, Minutes, Documents, Finance, Team) - These functions are already present but might need filtering logic for dashboard
+        async function loadTasks() {
+            try {
+                const response = await fetch('get_tasks.php');
+                taskData = await response.json();
+                // Sort tasks by due date for dashboard upcoming tasks
+                const sortedTasks = [...taskData].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+                // Update upcoming tasks on dashboard
+                const upcomingTasksList = document.getElementById('upcoming-tasks-list');
+                if (upcomingTasksList) {
+                    const today = new Date();
+                    const upcoming = sortedTasks.filter(task => new Date(task.dueDate) >= today && task.status !== 'Selesai').slice(0, 5); // Get top 5 upcoming
+                    if (upcoming.length > 0) {
+                        upcomingTasksList.innerHTML = upcoming.map(task => `
+                            <div class="flex justify-between items-center py-2 border-b last:border-b-0">
+                                <span>${task.name}</span>
+                                <span class="text-sm text-gray-500">${task.dueDate}</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        upcomingTasksList.innerHTML = '<p class="text-gray-500">Tidak ada tugas mendatang.</p>';
+                    }
+                }
+                applyTaskFiltersAndPagination(); // Apply filters and pagination for tasks table
+                updateTotalActiveTasks();
+                checkDeadlineWarnings();
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                showToast('Gagal memuat data tugas', 'error');
+            }
+        }
+
+        function updateTotalActiveTasks() {
+            const activeTasks = taskData.filter(task => task.status !== 'Selesai');
+            totalActiveTasksSpan.textContent = activeTasks.length;
+        }
+
+        function checkDeadlineWarnings() {
+            const today = new Date();
+            taskData.forEach(task => {
+                if (task.status !== 'Selesai') {
+                    const dueDate = new Date(task.dueDate);
+                    const diffTime = dueDate.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays <= 3 && diffDays >= 0) {
+                        showToast(`Tugas "${task.name}" mendekati deadline! (${diffDays} hari lagi)`, 'warning');
+                    } else if (diffDays < 0) {
+                        showToast(`Tugas "${task.name}" sudah melewati deadline!`, 'error');
+                    }
+                }
+            });
+        }
+
+        async function loadMinutes() {
+            try {
+                const response = await fetch('get_minute.php');
+                minuteData = await response.json();
+                document.getElementById('minute-table-body').innerHTML = renderTableRows(minuteData, 'minute');
+            } catch (error) {
+                console.error('Error loading minutes:', error);
+                showToast('Gagal memuat data berita acara', 'error');
+            }
+        }
+
+        async function loadDocuments() {
+            try {
+                const response = await fetch('get_document.php');
+                documentData = await response.json();
+                document.getElementById('document-table-body').innerHTML = renderTableRows(documentData, 'document');
+            } catch (error) {
+                console.error('Error loading documents:', error);
+                showToast('Gagal memuat data dokumen', 'error');
+            }
+        }
+
+        async function loadFinance() {
+            try {
+                const response = await fetch('get_finance.php');
+                financeData = await response.json();
+                document.getElementById('finance-table-body').innerHTML = renderTableRows(financeData, 'finance');
+            } catch (error) {
+                console.error('Error loading finance:', error);
+                showToast('Gagal memuat data keuangan', 'error');
+            }
+        }
+
+        async function loadTeam() {
+            try {
+                const response = await fetch('get_team.php');
+                teamData = await response.json();
+                // Example: Populate team members on dashboard
+                const teamMembersList = document.getElementById('team-members-list');
+                if (teamMembersList) {
+                    if (teamData.length > 0) {
+                        teamMembersList.innerHTML = teamData.slice(0, 5).map(member => `
+                            <div class="flex items-center space-x-2 py-2 border-b last:border-b-0">
+                                <img src="${member.avatar_url || 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/567dc3f2-ff66-456e-a540-30da3544795b.png'}" alt="${member.name}" class="rounded-full w-6 h-6">
+                                <span>${member.name} (${member.role})</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        teamMembersList.innerHTML = '<p class="text-gray-500">Tidak ada anggota tim.</p>';
+                    }
+                }
+                // Populate team table
+                document.getElementById('team-table-body').innerHTML = renderTableRows(teamData, 'team');
+                populateResponsibleDropdown(); // Populate responsible dropdown for tasks
+            } catch (error) {
+                console.error('Error loading team:', error);
+                showToast('Gagal memuat data tim', 'error');
+            }
+        }
+
+        // Populate Project Dropdown for Task Modal
+        function populateProjectDropdown() {
+            taskProjectSelect.innerHTML = '<option value="">Pilih Proyek</option>';
+            projectData.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = project.name;
+                taskProjectSelect.appendChild(option);
+            });
+        }
+
+        // Populate Responsible Dropdown for Task Modal
+        function populateResponsibleDropdown() {
+            taskResponsibleSelect.innerHTML = '<option value="">Pilih Penanggung Jawab</option>';
+            teamData.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = member.name;
+                taskResponsibleSelect.appendChild(option);
+            });
+        }
+
+        // Sidebar toggle function
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Function to show specific page content
+        function showPage(pageId, pageTitle) {
+            // Hide all page contents
+            document.querySelectorAll('.page-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Show the selected page content
+            const activePage = document.getElementById(pageId);
+            if (activePage) {
+                activePage.classList.add('active');
+            }
+
+            // Update the main content title
+            mainContentTitle.textContent = pageTitle;
+
+            // Update active link in sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('bg-blue-700');
+                link.classList.add('hover:bg-blue-700');
+            });
+            const currentActiveLink = document.querySelector(`.sidebar-link[data-page="${pageId}"]`);
+            if (currentActiveLink) {
+                currentActiveLink.classList.add('bg-blue-700');
+                currentActiveLink.classList.remove('hover:bg-blue-700');
+            }
+
+            // Close sidebar on mobile after selection
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 640 && sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        }
+
+        // Task Filtering and Pagination Logic
+        function applyTaskFiltersAndPagination() {
+            let filtered = [...taskData];
+
+            // Search Filter
+            const searchTerm = taskSearchInput.value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(task =>
+                    task.name.toLowerCase().includes(searchTerm) ||
+                    (projectData.find(p => p.id == task.project_id)?.name || '').toLowerCase().includes(searchTerm) ||
+                    (teamData.find(m => m.id == task.responsible_id)?.name || '').toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Status Filter
+            const statusTerm = taskStatusFilter.value;
+            if (statusTerm) {
+                filtered = filtered.filter(task => task.status === statusTerm);
+            }
+
+            // Priority Filter
+            const priorityTerm = taskPriorityFilter.value;
+            if (priorityTerm) {
+                filtered = filtered.filter(task => task.priority === priorityTerm);
+            }
+
+            // Date Filters
+            const startDateFilter = taskStartDateFilter.value;
+            const dueDateFilter = taskDueDateFilter.value;
+
+            if (startDateFilter) {
+                filtered = filtered.filter(task => new Date(task.startDate) >= new Date(startDateFilter));
+            }
+            if (dueDateFilter) {
+                filtered = filtered.filter(task => new Date(task.dueDate) <= new Date(dueDateFilter));
+            }
+
+            // Sorting
+            filtered.sort((a, b) => {
+                let valA, valB;
+                if (currentSortColumn === 'name') {
+                    valA = a.name.toLowerCase();
+                    valB = b.name.toLowerCase();
+                } else if (currentSortColumn === 'dueDate') {
+                    valA = new Date(a.dueDate);
+                    valB = new Date(b.dueDate);
+                } else if (currentSortColumn === 'progress') {
+                    valA = a.progress;
+                    valB = b.progress;
+                }
+
+                if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            filteredAndSortedTasks = filtered;
+            renderTaskTable();
+            updateTaskPagination();
+            updateTotalActiveTasks(); // Update active tasks count after filtering
+        }
+
+        function renderTaskTable() {
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const paginatedTasks = filteredAndSortedTasks.slice(start, end);
+
+            taskTableBody.innerHTML = renderTableRows(paginatedTasks, 'task');
+            initTaskActionButtons();
+            updateBulkActionState();
+            updateSelectAllCheckboxState();
+        }
+
+        function updateTaskPagination() {
+            const totalPages = Math.ceil(filteredAndSortedTasks.length / rowsPerPage);
+            const paginationNumbersDiv = document.getElementById('task-pagination-numbers');
+            paginationNumbersDiv.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.className = `relative inline-flex items-center px-4 py-2 border text-sm font-medium ${i === currentPage ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`;
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    renderTaskTable();
+                    updateTaskPagination();
+                });
+                paginationNumbersDiv.appendChild(button);
+            }
+
+            document.getElementById('prev-task-page').disabled = currentPage === 1;
+            document.getElementById('prev-task-page-mobile').disabled = currentPage === 1;
+            document.getElementById('next-task-page').disabled = currentPage === totalPages;
+            document.getElementById('next-task-page-mobile').disabled = currentPage === totalPages;
+
+            const startEntry = filteredAndSortedTasks.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+            const endEntry = Math.min(currentPage * rowsPerPage, filteredAndSortedTasks.length);
+            document.getElementById('task-pagination-start').textContent = startEntry;
+            document.getElementById('task-pagination-end').textContent = endEntry;
+            document.getElementById('task-pagination-total').textContent = filteredAndSortedTasks.length;
+        }
+
+        // Initialize Task Action Buttons
+        function initTaskActionButtons() {
+            // ✏️ EDIT TASK
+            document.querySelectorAll('.edit-task-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const taskId = parseInt(this.dataset.taskId);
+                    const task = taskData.find(t => t.id === taskId);
+                    if (task) {
+                        taskModalTitle.textContent = 'Edit Tugas';
+                        taskIdHidden.value = task.id;
+                        taskNameInput.value = task.name;
+                        taskProjectSelect.value = task.project_id;
+                        taskResponsibleSelect.value = task.responsible_id;
+                        taskStatusSelect.value = task.status;
+                        taskStartDateInput.value = task.startDate;
+                        taskDueDateInput.value = task.dueDate;
+                        taskProgressInput.value = task.progress;
+                        taskProgressValueSpan.textContent = task.progress;
+
+                        taskPriorityRadios.forEach(radio => {
+                            radio.checked = (radio.value === task.priority);
+                        });
+
+                        clearValidationErrors();
+                        taskModal.classList.remove('hidden');
+                    }
+                });
+            });
+
+            // 🗑 DELETE TASK
+            document.querySelectorAll('.delete-task-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const taskId = parseInt(this.dataset.taskId);
+                    const task = taskData.find(t => t.id === taskId);
+                    if (task) {
+                        showDeleteModal(task.id, task.name, 'task');
+                    }
+                });
+            });
+
+            // Checkbox for multi-select
+            document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const taskId = parseInt(this.dataset.taskId);
+                    if (this.checked) {
+                        selectedTaskIds.add(taskId);
+                    } else {
+                        selectedTaskIds.delete(taskId);
+                    }
+                    updateBulkActionState();
+                    updateSelectAllCheckboxState();
+                });
+            });
+        }
+
+        function updateBulkActionState() {
+            selectedTasksCountSpan.textContent = selectedTaskIds.size;
+            if (selectedTaskIds.size > 0) {
+                bulkActionButton.disabled = false;
+                bulkActionSelect.disabled = false;
+            } else {
+                bulkActionButton.disabled = true;
+                bulkActionSelect.disabled = true;
+                bulkActionSelect.value = ''; // Reset select
+            }
+        }
+
+        function updateSelectAllCheckboxState() {
+            const allCheckboxes = document.querySelectorAll('.task-checkbox');
+            if (allCheckboxes.length === 0) {
+                selectAllTasksCheckbox.checked = false;
+                selectAllTasksCheckbox.indeterminate = false;
+                return;
+            }
+
+            const allChecked = Array.from(allCheckboxes).every(cb => selectedTaskIds.has(parseInt(cb.dataset.taskId)));
+            const anyChecked = Array.from(allCheckboxes).some(cb => selectedTaskIds.has(parseInt(cb.dataset.taskId)));
+
+            if (allChecked) {
+                selectAllTasksCheckbox.checked = true;
+                selectAllTasksCheckbox.indeterminate = false;
+            } else if (anyChecked) {
+                selectAllTasksCheckbox.checked = false;
+                selectAllTasksCheckbox.indeterminate = true;
+            } else {
+                selectAllTasksCheckbox.checked = false;
+                selectAllTasksCheckbox.indeterminate = false;
+            }
+        }
+
+        function clearValidationErrors() {
+            taskNameError.classList.add('hidden');
+            taskProjectError.classList.add('hidden');
+            taskResponsibleError.classList.add('hidden');
+            taskPriorityError.classList.add('hidden');
+            taskStatusError.classList.add('hidden');
+            taskStartDateError.classList.add('hidden');
+            taskDueDateError.classList.add('hidden');
+        }
+
+        function validateTaskForm() {
+            let isValid = true;
+            clearValidationErrors();
+
+            if (taskNameInput.value.trim() === '') {
+                taskNameError.classList.remove('hidden');
+                isValid = false;
+            }
+            if (taskProjectSelect.value === '') {
+                taskProjectError.classList.remove('hidden');
+                isValid = false;
+            }
+            if (taskResponsibleSelect.value === '') {
+                taskResponsibleError.classList.remove('hidden');
+                isValid = false;
+            }
+            const selectedPriority = document.querySelector('input[name="priority"]:checked');
+            if (!selectedPriority) {
+                taskPriorityError.classList.remove('hidden');
+                isValid = false;
+            }
+            if (taskStatusSelect.value === '') {
+                taskStatusError.classList.remove('hidden');
+                isValid = false;
+            }
+            if (taskStartDateInput.value === '') {
+                taskStartDateError.classList.remove('hidden');
+                isValid = false;
+            }
+            if (taskDueDateInput.value === '') {
+                taskDueDateError.classList.remove('hidden');
+                isValid = false;
+            } else if (new Date(taskDueDateInput.value) < new Date(taskStartDateInput.value)) {
+                taskDueDateError.textContent = 'Batas Waktu tidak boleh sebelum Tanggal Mulai.';
+                taskDueDateError.classList.remove('hidden');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize sidebar toggle
+            document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
+            
+            // Add event listeners for sidebar links
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const pageId = this.dataset.page;
+                    const pageTitle = this.querySelector('span').textContent;
+                    showPage(pageId, pageTitle);
+                });
+            });
+
+            // Load initial data for all sections
+            loadProjects();
+            loadTasks();
+            loadMinutes();
+            loadDocuments();
+            loadFinance();
+            loadTeam();
+
+            // Project Filter Event Listeners
+            searchInput.addEventListener('input', applyProjectFilters);
+            statusFilter.addEventListener('change', applyProjectFilters);
+            categoryFilter.addEventListener('change', applyProjectFilters);
+
+            // Project Modal Event Listeners
+            document.getElementById('add-project-btn')?.addEventListener('click', () => {
+                document.querySelector('#add-project-modal h3').textContent = 'Tambah Proyek Baru';
+                document.getElementById('status-message').textContent = 'Simpan'; // Reset button text
+                document.getElementById('project-form').reset(); // Clear form
+                const hiddenIdInput = document.getElementById('project-id-hidden');
+                if (hiddenIdInput) hiddenIdInput.remove(); // Remove hidden ID for new project
+                document.getElementById('add-project-modal').classList.remove('hidden');
+            });
+
+            document.getElementById('close-project-modal')?.addEventListener('click', () => {
+                document.getElementById('add-project-modal').classList.add('hidden');
+                document.getElementById('project-form').reset();
+                const hiddenIdInput = document.getElementById('project-id-hidden');
+                if (hiddenIdInput) hiddenIdInput.remove();
+            });
+
+            document.getElementById('cancel-project-btn')?.addEventListener('click', () => {
+                document.getElementById('add-project-modal').classList.add('hidden');
+                document.getElementById('project-form').reset();
+                const hiddenIdInput = document.getElementById('project-id-hidden');
+                if (hiddenIdInput) hiddenIdInput.remove();
+            });
+
+            // Delete Confirmation Button
+            document.getElementById('confirm-delete-btn')?.addEventListener('click', function() {
+                if (currentDeleteType === 'project' && projectIdToDelete) {
+                    fetch('hapus_proyek.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ id: projectIdToDelete })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('Proyek berhasil dihapus!', 'success');
+                            loadProjects(); // Reload projects after deletion
+                        } else {
+                            showToast(data.message || 'Gagal menghapus proyek', 'error');
+                        }
+                        tutupModal();
+                    })
+                    .catch(error => {
+                        console.error('Error deleting project:', error);
+                        showToast('Terjadi kesalahan saat menghapus proyek', 'error');
+                        tutupModal();
+                    });
+                } else if (currentDeleteType === 'task' && taskIdToDelete) {
+                    fetch('hapus_tugas.php', { // Assuming hapus_tugas.php exists
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ id: taskIdToDelete })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('Tugas berhasil dihapus!', 'success');
+                            loadTasks(); // Reload tasks after deletion
+                            selectedTaskIds.delete(taskIdToDelete); // Remove from selected
+                            updateBulkActionState();
+                        } else {
+                            showToast(data.message || 'Gagal menghapus tugas', 'error');
+                        }
+                        tutupModal();
+                    })
+                    .catch(error => {
+                        console.error('Error deleting task:', error);
+                        showToast('Terjadi kesalahan saat menghapus tugas', 'error');
+                        tutupModal();
+                    });
+                }
+            });
+
+            // Project Form Submission
+            document.getElementById('project-form')?.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                document.getElementById('loading-spinner').classList.remove('hidden');
+                document.getElementById('status-message').innerText = 'Menyimpan...';
+
+                const formData = new FormData(this);
+
+                fetch('simpan_project.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(response => {
+                    console.log('Respon dari PHP:', response);
+                    if (response.success) {
+                        loadProjects();
+                        this.reset();
+                        document.getElementById('add-project-modal').classList.add('hidden');
+                        showToast(response.message || 'Proyek berhasil disimpan', 'success');
+
+                        // Remove hidden ID input if exists
+                        const hiddenIdInput = document.getElementById('project-id-hidden');
+                        if (hiddenIdInput) hiddenIdInput.remove();
+                    } else {
+                        showToast(response.message || 'Gagal menyimpan proyek', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving project:', error);
+                    showToast('Terjadi kesalahan saat menyimpan proyek', 'error');
+                })
+                .finally(() => {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                    document.getElementById('status-message').innerText = 'Simpan'; // Reset button text
+                });
+            });
+            
+            // Client Modal Functions
+            function openClientModal() {
+                document.getElementById('client-modal').classList.remove('hidden');
+            }
+            
+            function closeClientModal() {
+                document.getElementById('client-modal').classList.add('hidden');
+                document.getElementById('new-client-name').value = '';
+            }
+            
+            function simpanClientBaru() {
+                const name = document.getElementById('new-client-name').value.trim();
+                if (!name) {
+                    alert('Nama klien tidak boleh kosong.');
+                    return;
+                }
+            
+                const formData = new FormData();
+                formData.append('name', name);
+            
+                fetch('simpan_client.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Respon dari Server:', data);
+                    if (data.success) {
+                        closeClientModal();
+                        loadClients(); // Re-fetch daftar klien
+                    } else {
+                        alert(data.message || 'Gagal menambahkan klien.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Gagal simpan klien:', err);
+                    alert('Terjadi kesalahan.');
+                });
+            }
+            
+            function loadClients() {
+                fetch('get_clients.php')
+                    .then(res => res.json())
+                    .then(data => {
+                        const select = document.getElementById('client');
+                        select.innerHTML = '<option value="">Pilih Klien</option>';
+                        data.forEach(client => {
+                            const option = document.createElement('option');
+                            option.value = client.id;
+                            option.textContent = client.name;
+                            select.appendChild(option);
+                        });
+                    })
+                    .catch(err => console.error('Gagal load klien:', err));
+            }
+            
+            document.addEventListener('DOMContentLoaded', loadClients);
+
+            // Task Page Specific Event Listeners
+            taskSearchInput.addEventListener('input', () => { currentPage = 1; applyTaskFiltersAndPagination(); });
+            taskStatusFilter.addEventListener('change', () => { currentPage = 1; applyTaskFiltersAndPagination(); });
+            taskPriorityFilter.addEventListener('change', () => { currentPage = 1; applyTaskFiltersAndPagination(); });
+            taskStartDateFilter.addEventListener('change', () => { currentPage = 1; applyTaskFiltersAndPagination(); });
+            taskDueDateFilter.addEventListener('change', () => { currentPage = 1; applyTaskFiltersAndPagination(); });
+
+            document.getElementById('prev-task-page').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTaskTable();
+                    updateTaskPagination();
+                }
+            });
+            document.getElementById('next-task-page').addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredAndSortedTasks.length / rowsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTaskTable();
+                    updateTaskPagination();
+                }
+            });
+            document.getElementById('prev-task-page-mobile').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTaskTable();
+                    updateTaskPagination();
+                }
+            });
+            document.getElementById('next-task-page-mobile').addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredAndSortedTasks.length / rowsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTaskTable();
+                    updateTaskPagination();
+                }
+            });
+
+            // Task Table Sorting
+            document.querySelectorAll('#tugas-view th[data-sort]').forEach(header => {
+                header.addEventListener('click', function() {
+                    const column = this.dataset.sort;
+                    if (currentSortColumn === column) {
+                        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSortColumn = column;
+                        currentSortDirection = 'asc';
+                    }
+                    // Update sort icons
+                    document.querySelectorAll('#tugas-view th[data-sort] i').forEach(icon => {
+                        icon.className = 'fas fa-sort ml-1';
+                    });
+                    const currentIcon = this.querySelector('i');
+                    if (currentIcon) {
+                        currentIcon.className = `fas fa-sort-${currentSortDirection === 'asc' ? 'up' : 'down'} ml-1`;
+                    }
+                    applyTaskFiltersAndPagination();
+                });
+            });
+
+            // Add Task Button
+            document.getElementById('add-task-btn')?.addEventListener('click', () => {
+                taskModalTitle.textContent = 'Tambah Tugas Baru';
+                taskForm.reset();
+                taskIdHidden.value = ''; // Clear hidden ID for new task
+                taskProgressValueSpan.textContent = '0';
+                clearValidationErrors();
+                taskModal.classList.remove('hidden');
+            });
+
+            // Close Task Modal
+            document.getElementById('close-task-modal')?.addEventListener('click', () => {
+                taskModal.classList.add('hidden');
+                taskForm.reset();
+                clearValidationErrors();
+            });
+
+            document.getElementById('cancel-task-btn')?.addEventListener('click', () => {
+                taskModal.classList.add('hidden');
+                taskForm.reset();
+                clearValidationErrors();
+            });
+
+            // Task Progress Slider Update
+            taskProgressInput.addEventListener('input', () => {
+                taskProgressValueSpan.textContent = taskProgressInput.value;
+            });
+
+            // Task Form Submission
+            taskForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                if (!validateTaskForm()) {
+                    showToast('Mohon lengkapi semua field yang wajib diisi.', 'error');
+                    return;
+                }
+
+                taskLoadingSpinner.classList.remove('hidden');
+                taskSubmitText.innerText = 'Menyimpan...';
+
+                const formData = new FormData(this);
+                const taskId = taskIdHidden.value;
+                const url = taskId ? 'update_task.php' : 'simpan_task.php'; // Assuming these PHP files exist
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showToast(data.message || 'Tugas berhasil disimpan!', 'success');
+                        taskModal.classList.add('hidden');
+                        taskForm.reset();
+                        loadTasks(); // Reload tasks
+                    } else {
+                        showToast(data.message || 'Gagal menyimpan tugas.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error saving task:', error);
+                    showToast('Terjadi kesalahan saat menyimpan tugas.', 'error');
+                } finally {
+                    taskLoadingSpinner.classList.add('hidden');
+                    taskSubmitText.innerText = 'Simpan';
+                }
+            });
+
+            // Select All Tasks Checkbox
+            selectAllTasksCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                    const taskId = parseInt(checkbox.dataset.taskId);
+                    if (isChecked) {
+                        selectedTaskIds.add(taskId);
+                    } else {
+                        selectedTaskIds.delete(taskId);
+                    }
+                });
+                updateBulkActionState();
+            });
+
+            // Bulk Action Button
+            bulkActionButton.addEventListener('click', async function() {
+                const action = bulkActionSelect.value;
+                if (!action) {
+                    showToast('Pilih aksi massal terlebih dahulu.', 'warning');
+                    return;
+                }
+                if (selectedTaskIds.size === 0) {
+                    showToast('Pilih setidaknya satu tugas untuk aksi massal.', 'warning');
+                    return;
+                }
+
+                const confirmAction = confirm(`Yakin ingin melakukan aksi "${action}" pada ${selectedTaskIds.size} tugas terpilih?`);
+                if (!confirmAction) return;
+
+                const taskIdsArray = Array.from(selectedTaskIds);
+                let url = '';
+                let body = {};
+
+                if (action === 'delete') {
+                    url = 'hapus_tugas_massal.php'; // Assuming this PHP file exists
+                    body = { ids: taskIdsArray };
+                } else if (action.startsWith('status-')) {
+                    const newStatus = action.replace('status-', '').replace(/-/g, ' ');
+                    url = 'update_task_status_massal.php'; // Assuming this PHP file exists
+                    body = { ids: taskIdsArray, status: newStatus };
+                }
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showToast(data.message || 'Aksi massal berhasil!', 'success');
+                        selectedTaskIds.clear(); // Clear selection after action
+                        loadTasks(); // Reload tasks
+                    } else {
+                        showToast(data.message || 'Gagal melakukan aksi massal.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error performing bulk action:', error);
+                    showToast('Terjadi kesalahan saat melakukan aksi massal.', 'error');
+                }
+            });
+
+            // Export to PDF
+            document.getElementById('export-pdf-btn').addEventListener('click', () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFontSize(18);
+                doc.text("Daftar Tugas", 14, 22);
+
+                const tableColumn = ["Nama Tugas", "Proyek", "Penanggung Jawab", "Prioritas", "Status", "Tanggal Mulai", "Batas Waktu", "Progress"];
+                const tableRows = [];
+
+                filteredAndSortedTasks.forEach(task => {
+                    const taskData = [
+                        task.name,
+                        projectData.find(p => p.id == task.project_id)?.name || 'N/A',
+                        teamData.find(m => m.id == task.responsible_id)?.name || 'N/A',
+                        task.priority,
+                        task.status,
+                        task.startDate,
+                        task.dueDate,
+                        `${task.progress}%`
+                    ];
+                    tableRows.push(taskData);
+                });
+
+                doc.autoTable({
+                    head: [tableColumn],
+                    body: tableRows,
+                    startY: 30,
+                    styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+                    headStyles: { fillColor: [23, 37, 84], textColor: [255, 255, 255] }, // blue-800
+                    alternateRowStyles: { fillColor: [243, 244, 246] } // gray-100
+                });
+
+                doc.save('daftar_tugas.pdf');
+                showToast('Data tugas berhasil diexport ke PDF!', 'success');
+            });
+
+            // Export to Excel
+            document.getElementById('export-excel-btn').addEventListener('click', () => {
+                const data = filteredAndSortedTasks.map(task => ({
+                    "Nama Tugas": task.name,
+                    "Proyek": projectData.find(p => p.id == task.project_id)?.name || 'N/A',
+                    "Penanggung Jawab": teamData.find(m => m.id == task.responsible_id)?.name || 'N/A',
+                    "Prioritas": task.priority,
+                    "Status": task.status,
+                    "Tanggal Mulai": task.startDate,
+                    "Batas Waktu": task.dueDate,
+                    "Progress (%)": task.progress
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Tugas");
+                XLSX.writeFile(wb, "daftar_tugas.xlsx");
+                showToast('Data tugas berhasil diexport ke Excel!', 'success');
+            });
+        });
+    </script>
+</body>
+</html>

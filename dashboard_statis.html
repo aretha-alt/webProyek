@@ -1,0 +1,129 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Statis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @media (max-width: 640px) {
+            #sidebar {
+                position: fixed;
+                height: 100vh;
+                z-index: 40;
+                transform: translateX(-100%);
+            }
+            #sidebar.active {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div id="sidebar" class="w-64 bg-blue-800 text-white transition-all duration-300 ease-in-out">
+            <div class="p-4 border-b border-blue-700 flex justify-between items-center">
+                <h1 class="text-xl font-bold">ProjectFlow</h1>
+                <button onclick="toggleSidebar()" class="sm:hidden">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li><a href="#" class="block px-4 py-2 rounded-lg hover:bg-blue-700 active">Dashboard</a></li>
+                    <li><a href="#" class="block px-4 py-2 rounded-lg hover:bg-blue-700">Proyek</a></li>
+                    <li><a href="#" class="block px-4 py-2 rounded-lg hover:bg-blue-700">Tugas</a></li>
+                    <li><a href="#" class="block px-4 py-2 rounded-lg hover:bg-blue-700">Berita Acara</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-6 overflow-y-auto">
+            <h2 class="text-2xl font-semibold mb-4">Daftar Proyek</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead>
+                        <tr class="bg-gray-100 text-left">
+                            <th class="py-2 px-4 border-b">#</th>
+                            <th class="py-2 px-4 border-b">Nama Proyek</th>
+                            <th class="py-2 px-4 border-b">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectTableBody">
+                        <!-- Data akan dimasukkan lewat JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 flex justify-between items-center">
+                <div id="entryInfo" class="text-sm text-gray-600"></div>
+                <div class="space-x-1" id="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        const projects = Array.from({ length: 37 }, (_, i) => ({
+            id: i + 1,
+            name: `Proyek ${i + 1}`,
+            status: i % 2 === 0 ? 'Aktif' : 'Selesai'
+        }));
+
+        const rowsPerPage = 10;
+        let currentPage = 1;
+
+        function renderTable() {
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const data = projects.slice(start, end);
+
+            const tbody = document.getElementById("projectTableBody");
+            tbody.innerHTML = "";
+
+            data.forEach(p => {
+                const row = `
+                    <tr>
+                        <td class="py-2 px-4 border-b">${p.id}</td>
+                        <td class="py-2 px-4 border-b">${p.name}</td>
+                        <td class="py-2 px-4 border-b">${p.status}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            document.getElementById("entryInfo").textContent =
+                `Menampilkan ${start + 1}-${Math.min(end, projects.length)} dari ${projects.length} data`;
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(projects.length / rowsPerPage);
+            const pagination = document.getElementById("pagination");
+            pagination.innerHTML = "";
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement("button");
+                btn.textContent = i;
+                btn.className = `px-3 py-1 rounded ${i === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`;
+                btn.onclick = () => {
+                    currentPage = i;
+                    renderTable();
+                    renderPagination();
+                };
+                pagination.appendChild(btn);
+            }
+        }
+
+        // Initial render
+        renderTable();
+        renderPagination();
+    </script>
+</body>
+</html>
